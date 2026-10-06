@@ -1,77 +1,54 @@
-# SkillSwap Frontend
+# SkillSwap
 
-Next.js (App Router) + Tailwind CSS client for SkillSwap.
+AI-powered peer-to-peer skill exchange platform — "What I can teach ↔ What I want to learn."
 
-## Setup
+- `backend/` — Node.js/Express/MongoDB API (see backend/README.md)
+- `frontend/` — Next.js/Tailwind client (see frontend/README.md)
+
+## Quick start
 
 ```bash
-npm install
-cp .env.local.example .env.local   # fill in Firebase client config + API URL
-npm run dev                          # http://localhost:3000
+# Terminal 1
+cd backend && npm install && cp .env.example .env   # fill in MongoDB + Firebase Admin + OpenAI
+npm run seed && npm run dev
+
+# Terminal 2
+cd frontend && npm install && cp .env.local.example .env.local   # fill in Firebase client config
+npm run dev
 ```
 
-Get the Firebase web config from Firebase Console -> Project Settings ->
-General -> Your apps -> SDK setup and configuration.
+Then visit http://localhost:3000.
 
-## Structure
+## Status
 
-```
-app/
-  layout.js            root layout - fonts, nav, AuthProvider
-  page.js               landing page
-  auth/login, auth/signup
-  onboarding/            teach/learn skills, weekly availability, location
-  dashboard/             post-login summary
-  profile/                bio, experience level, skill lists
-  matches/                ranked, explainable matches + "Request swap" button
-  requests/               incoming/outgoing swap requests, accept/reject/cancel
-  messages/               conversation list + live chat (Socket.IO)
-  sessions/               schedule/cancel/complete/no-show, prompts a review on completion
-  credits/                balance + transaction history
-  notifications/          list + mark read
-  goals/ achievements/ ai-coach/ roadmaps/ admin/   (placeholders - Priority 4-5)
-components/
-  NavBar.js, RequireAuth.js, MatchCard.js, ComingSoon.js
-  SwapRequestModal.js, ScheduleSessionModal.js, ReviewModal.js
-lib/
-  firebase.js    Firebase client SDK init
-  AuthContext.js React context wrapping Firebase auth state + backend profile
-  api.js          centralized fetch wrapper: attaches auth token, parses responses, normalizes errors
-  socket.js        authenticated Socket.IO client singleton (used by messages/)
-```
+**Priority 1 (Core)** — built end-to-end: Firebase auth, profiles, skill
+taxonomy, teach/learn skill lists, weekly availability, approximate
+location, and the deterministic, explainable matching engine (with a
+graph-based multi-person exchange-cycle finder as an advanced extra).
 
-## Design system
+**Priority 2 (Exchange)** — built end-to-end: swap requests (send/accept/
+reject/cancel), real-time chat via authenticated Socket.IO, session
+scheduling with overlap conflict-prevention, session completion (triggers
+credit settlement), manual no-show reporting, and reviews gated to
+completed sessions.
 
-Two-color system reflecting the app's core "teach ↔ learn" concept:
-`teach` (deep teal, `#0F5C56`) for what a user offers, `learn` (warm
-tangerine, `#E8703A`) for what a user is seeking. Display type is Fraunces
-(serif, warm), UI type is Inter. See `tailwind.config.js` for the full token
-set.
+**Priority 3 (Economy)** — the credit ledger has been built and tested
+since Priority 1; its REST read surface (balance + history) is now live
+too.
 
-## What's implemented vs. placeholder
+**Priority 4-5** (AI coach/roadmaps, skill verification, gamification,
+admin dashboard) are not yet built — the frontend has placeholder pages
+for all of them so the full navigation from the spec exists; see each
+package's README for the detailed breakdown.
 
-Matches `backend/README.md`'s priority order:
+## Known environment quirks (see conversation history for full context)
 
-- **Built (Priority 1 - Core):** landing page, signup/login (Firebase email +
-  Google), onboarding (skills, weekly availability, location), dashboard,
-  profile, and the matches page with the full explainable-score breakdown
-  (the `MatchCard` component - expandable weighted breakdown table, mirrors
-  spec section 11).
-- **Built (Priority 2 - Exchange):** sending a swap request from a match
-  (`SwapRequestModal`), accepting/rejecting/cancelling on the `/requests`
-  page, real-time chat once a swap is accepted (`/messages`, backed by the
-  authenticated Socket.IO layer), scheduling/cancelling/completing/
-  reporting-no-show on sessions (`/sessions`, `ScheduleSessionModal`), and
-  leaving a star rating after a completed session (`ReviewModal`).
-- **Built (Priority 3 - Economy, read surface):** `/credits` shows live
-  balance and transaction history.
-- **Placeholder (Priority 4-5):** goals, achievements, ai-coach, roadmaps,
-  admin. Each renders a `ComingSoon` card naming which priority tier it
-  belongs to, so the full page list from the spec exists and is reachable.
-
-## Note on `next/font/google` in restricted environments
-
-The root layout fetches Fraunces and Inter from Google Fonts at build time.
-This requires outbound network access to `fonts.googleapis.com`; if your
-build environment blocks that, swap `next/font/google` for local font files
-temporarily, or allow that domain.
+- **Windows + `mongodb+srv://` connection strings:** some Windows setups
+  can't resolve the DNS SRV record Atlas connection strings rely on
+  (`querySrv ECONNREFUSED`). `backend/src/config/db.js` forces Google's
+  public DNS as a workaround - already applied in this codebase.
+- **Paths containing `&` or other shell-special characters** break `npm`
+  scripts on Windows (`nodemon` resolves to the wrong path). Keep the
+  project path plain.
+- **`.env` vs `.env.example`:** the app only reads a file literally named
+  `.env` / `.env.local` - copy the example file, don't edit it in place.
